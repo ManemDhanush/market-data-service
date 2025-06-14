@@ -1,7 +1,14 @@
+import pytest
 from app.api.main import app
 from fastapi.testclient import TestClient
+from unittest.mock import patch
+from app.core.db import Base, engine
 
 client = TestClient(app)
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_database():
+    Base.metadata.create_all(bind=engine)
 
 
 def test_calculate_moving_average():
@@ -51,10 +58,11 @@ def test_get_latest_price_success():
 
 def test_get_latest_price_invalid_symbol():
     response = client.get("/prices/latest?symbol=INVALIDSYMBOL123")
-    assert response.status_code == 404 or response.status_code == 500
+    assert response.status_code in (404, 500)
 
 
-def test_poll_prices_success():
+@patch("app.api.main.publish_price_event")
+def test_poll_prices_success(mock_publish):
     payload = {
         "symbols": ["AAPL", "MSFT"],
         "interval": 60,
@@ -66,6 +74,7 @@ def test_poll_prices_success():
     assert "job_id" in body
     assert body["status"] == "accepted"
     assert body["config"]["symbols"] == ["AAPL", "MSFT"]
+    assert mock_publish.call_count == 2
 
 
 def test_poll_prices_empty_symbols():
