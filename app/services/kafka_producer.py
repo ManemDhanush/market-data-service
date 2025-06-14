@@ -6,11 +6,13 @@ KAFKA_BROKER = os.getenv("KAFKA_BROKER", "localhost:9092")
 
 producer = Producer({"bootstrap.servers": KAFKA_BROKER})
 
+
 def delivery_report(err, msg):
     if err is not None:
         print(f"❌ Delivery failed: {err}")
     else:
         print(f"✅ Message delivered to {msg.topic()} [{msg.partition()}]")
+
 
 def publish_price_event(event: dict, topic: str = "price-events"):
     try:

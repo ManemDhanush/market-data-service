@@ -2,7 +2,6 @@
 from confluent_kafka import Consumer, KafkaException
 from collections import defaultdict, deque
 import json
-import time
 from app.core.db import SessionLocal, MovingAverage
 from datetime import datetime
 from app.core.db import RawPrice
@@ -10,11 +9,12 @@ from app.core.db import RawPrice
 KAFKA_BROKER = "localhost:9092"
 TOPIC = "price-events"
 
-# Memory store for latest 5 prices per symbol
 price_history = defaultdict(lambda: deque(maxlen=5))
+
 
 def calculate_moving_average(prices):
     return round(sum(prices) / len(prices), 2)
+
 
 def start_consumer():
     consumer = Consumer({
@@ -38,7 +38,6 @@ def start_consumer():
             event = json.loads(msg.value().decode("utf-8"))
             symbol = event["symbol"]
             price = event["price"]
-            # saving raw price data to DB
             session = SessionLocal()
             try:
                 session.add(RawPrice(
@@ -54,17 +53,16 @@ def start_consumer():
             finally:
                 session.close()
 
-            # Update price history
             price_history[symbol].append(price)
 
             if len(price_history[symbol]) == 5:
                 ma = calculate_moving_average(price_history[symbol])
                 print(f"📈 {symbol} - 5pta MA = {ma}")
 
-                # Save to DB
                 session = SessionLocal()
                 try:
-                    existing = session.query(MovingAverage).filter_by(symbol=symbol).first()
+                    existing = session.query(MovingAverage).filter_by(
+                        symbol=symbol).first()
                     if existing:
                         existing.moving_average = ma
                         existing.timestamp = datetime.utcnow()
@@ -81,12 +79,14 @@ def start_consumer():
                     session.close()
 
             else:
-                print(f"➕ {symbol} - Collected {len(price_history[symbol])}/5 prices")
+                print(f"🔄 {symbol} - Waiting for more prices... "
+                      f"Collected {len(price_history[symbol])}/5")
 
     except KeyboardInterrupt:
         print("👋 Shutting down consumer.")
     finally:
         consumer.close()
+
 
 if __name__ == "__main__":
     start_consumer()

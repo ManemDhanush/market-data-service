@@ -131,9 +131,3 @@ Blockhouse Capital – Software Engineer Intern Assignment
 yaml
 Copy
 Edit
-
----
-
-You're good to drop this directly into `README.md`. Everything is now perfectly structured with **proper line spacing between code blocks and headers**.
-
-Want a `.gitignore` or final review checklist next?
