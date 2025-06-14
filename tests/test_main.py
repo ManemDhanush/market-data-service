@@ -6,6 +6,7 @@ from app.core.db import Base, engine
 
 client = TestClient(app)
 
+
 @pytest.fixture(scope="session", autouse=True)
 def setup_database():
     Base.metadata.create_all(bind=engine)
