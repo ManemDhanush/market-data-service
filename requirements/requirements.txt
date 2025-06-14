@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+pydantic
+confluent-kafka
+yfinance
+python-dotenv
+httpx
+pytest

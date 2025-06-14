@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.0.1
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.0.1
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  db:
+    image: postgres:14
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: market_data
+    ports:
+      - "5432:5432"
+
+  # Uncomment the following section if you want to run a Kafka consumer
+  # running in a separate terminal. for simplicity
+
+  # consumer:
+  #   build: 
+  #     context: .
+  #     dockerfile: docker/Dockerfile
+  #   command: python kafka_consumer.py
+  #   depends_on:
+  #     - kafka
+  #     - db
+
+  # Uncomment the following section if you want to run a FastAPI application
+  # that interacts with Kafka and PostgreSQL.
+  # running in a separate terminal .
+
+  # api:
+  #   build:
+  #     context: .
+  #     dockerfile: docker/Dockerfile
+  #   ports:
+  #     - "8000:8000"
+  #   depends_on:
+  #     - kafka
+  #     - db
+  #   environment:
+  #     - KAFKA_BROKER=localhost:9092
+  #     - DATABASE_URL=postgresql://postgres:postgres@db:5432/market_data
+  #   command: uvicorn app.api.main:app --host 0.0.0.0 --port 8000
